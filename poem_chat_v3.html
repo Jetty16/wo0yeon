@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-title" content="시">
+<title>현실의 구름은 실선 꿈속의 구름은 점선</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+  body {
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    background: #fff; height: 100dvh;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .header {
+    padding: calc(env(safe-area-inset-top) + 8px) 12px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 0.5px solid #C6C6C8; flex-shrink: 0;
+  }
+  .header-back { display: flex; align-items: center; color: #007AFF; width: 60px; }
+  .header-back svg { width: 12px; height: 20px; }
+  .header-center { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; }
+  .header-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, #6E9FF0, #3D7CF5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 2px;
+  }
+  .header-name {
+    font-size: 11px; color: #000; font-weight: 400; max-width: 100%;
+    text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; align-items: center; gap: 3px;
+  }
+  .header-name svg { width: 7px; height: 11px; flex-shrink: 0; }
+  .header-icons { display: flex; gap: 22px; align-items: center; justify-content: flex-end; width: 60px; }
+  .header-icon svg { fill: #007AFF; width: 24px; height: 24px; }
+
+  .thread {
+    flex: 1; overflow-y: auto; padding: 14px 14px 8px;
+    display: flex; flex-direction: column; gap: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .timestamp { text-align: center; font-size: 11px; color: #8E8E93; margin: 6px 0 12px; }
+  .timestamp b { color: #6E6E73; font-weight: 600; }
+
+  .bubble-wrap {
+    display: flex; flex-direction: column;
+    opacity: 0; transform: translateY(10px) scale(0.96);
+    transition: opacity 0.32s ease, transform 0.32s cubic-bezier(0.2,0.8,0.2,1);
+    margin: 2px 0;
+  }
+  .bubble-wrap.me { align-items: flex-end; }
+  .bubble-wrap.them { align-items: flex-start; }
+  .bubble-wrap.visible { opacity: 1; transform: translateY(0) scale(1); }
+
+  .bubble {
+    max-width: 76%; padding: 9px 14px;
+    font-size: 16px; line-height: 1.45; white-space: pre-line;
+    letter-spacing: -0.2px;
+  }
+  .bubble.me { background: #007AFF; color: #fff; border-radius: 19px 19px 5px 19px; }
+  /* 꿈속의 구름은 점선 — 상대 말풍선 외곽선만 점선 */
+  .bubble.them {
+    background: #E5E5EA; color: #000; border-radius: 19px 19px 19px 5px;
+    font-style: italic; border: 2px dashed #9C9CA1;
+  }
+
+  .status { font-size: 11px; color: #8E8E93; align-self: flex-end; text-align: right; margin-top: 3px; margin-right: 3px; transition: opacity 0.35s; }
+
+  .typing-wrap { display: flex; align-items: flex-start; margin: 2px 0; }
+  .typing-bubble { background: #E5E5EA; border: 2px dashed #9C9CA1; border-radius: 19px 19px 19px 5px; padding: 11px 15px; display: flex; gap: 4px; align-items: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #8E8E93; animation: bounce 1.3s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.18s; }
+  .dot:nth-child(3) { animation-delay: 0.36s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+  .input-bar {
+    padding: 8px 10px calc(env(safe-area-inset-bottom) + 12px);
+    display: flex; align-items: flex-end; gap: 8px;
+    border-top: 0.5px solid #C6C6C8; flex-shrink: 0;
+  }
+  .plus-btn { width: 34px; height: 34px; border-radius: 50%; background: #E5E5EA; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .plus-btn svg { width: 16px; height: 16px; fill: #8E8E93; }
+  .input-field {
+    flex: 1; border: 1px solid #D1D1D6; border-radius: 18px;
+    padding: 7px 14px; font-size: 16px; color: #3C3C43; background: #fff;
+    min-height: 34px; display: flex; align-items: center;
+  }
+  .input-field.placeholder { color: #B0B0B5; }
+  .send-btn {
+    width: 34px; height: 34px; border-radius: 50%; background: #E5E5EA;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: background 0.25s, transform 0.15s;
+  }
+  .send-btn svg { width: 22px; height: 22px; fill: #B0B0B5; transition: fill 0.25s; }
+  .send-btn.ready { background: #007AFF; animation: nudge 2s infinite; }
+  .send-btn.ready svg { fill: #fff; }
+  .send-btn:active { transform: scale(0.9); }
+  @keyframes nudge { 0%, 92%, 100% { transform: scale(1); } 96% { transform: scale(1.12); } }
+
+  .replay-btn {
+    position: fixed; bottom: calc(env(safe-area-inset-bottom) + 78px); right: 16px;
+    background: rgba(0,0,0,0.55); color: #fff; border: none; border-radius: 20px;
+    padding: 7px 14px; font-size: 13px; z-index: 10;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    opacity: 0; pointer-events: none; transition: opacity 0.4s;
+  }
+  .replay-btn.visible { opacity: 1; pointer-events: auto; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-back">
+    <svg viewBox="0 0 12 20"><path d="M10 1L2 10L10 19" stroke="#007AFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+  </div>
+  <div class="header-center">
+    <div class="header-avatar">시</div>
+    <div class="header-name">현실의 구름은 실선 꿈속의 구름은 점선
+      <svg viewBox="0 0 7 11"><path d="M1 1L5.5 5.5L1 10" stroke="#8E8E93" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
+    </div>
+  </div>
+  <div class="header-icons">
+    <span class="header-icon"><svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z"/></svg></span>
+  </div>
+</div>
+
+<div class="thread" id="thread"></div>
+
+<button class="replay-btn" id="replayBtn">다시 보기 ↺</button>
+
+<div class="input-bar">
+  <div class="plus-btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#8E8E93" stroke-width="2" stroke-linecap="round"/></svg></div>
+  <div class="input-field placeholder" id="inputField">iMessage</div>
+  <div class="send-btn" id="sendBtn"><svg viewBox="0 0 24 24"><path d="M12 4l-7 7h4v8h6v-8h4z"/></svg></div>
+</div>
+
+<script>
+const messages = [
+  { sender:'me', text:'참 아픈 꿈을 꾸었다\n눈에 눈물은 세수를 재촉한다\n매번 눈물은 한순간에 나를 어린 애로 만들어버린다' },
+  { sender:'them', text:'일어나 눈을 비비는 사람이다' },
+  { sender:'me', text:'그때를 여러 번 꿈으로 인출시킨 탓에\n이제는 어디까지가 기억인지 추억인지 억측인지 모를 그때를\n아프게 조립한다' },
+  { sender:'them', text:'일어나 멍을 때리는 사람이다' },
+  { sender:'me', text:'꿈이 꿈이었다는 사실을 인정하고 사느니\n차라리 현실과 꿈을 구분 짓지 않기로 했다\n이건 점선이냐 실선이냐 정도의 차이일 뿐이니' },
+  { sender:'them', text:'잠이 많은 사람이다' }
+];
+
+const thread = document.getElementById('thread');
+const sendBtn = document.getElementById('sendBtn');
+const inputField = document.getElementById('inputField');
+const replayBtn = document.getElementById('replayBtn');
+let idx = 0, busy = false;
+
+function timeStr(){ const d=new Date(); let h=d.getHours(); const ap=h<12?'오전':'오후'; h=h%12||12; return ap+' '+h+':'+String(d.getMinutes()).padStart(2,'0'); }
+function scrollDown(){ thread.scrollTop = thread.scrollHeight; }
+
+function setReady(on){
+  if(on){ sendBtn.classList.add('ready'); inputField.classList.add('placeholder'); inputField.textContent='iMessage'; }
+  else { sendBtn.classList.remove('ready'); inputField.classList.add('placeholder'); inputField.textContent='iMessage'; }
+}
+
+function clearStatuses(){ thread.querySelectorAll('[data-status]').forEach(s => s.remove()); }
+function setStatus(text){ const s=document.createElement('div'); s.className='status'; s.dataset.status='1'; s.textContent=text; thread.appendChild(s); scrollDown(); return s; }
+function markRead(){ const s=thread.querySelector('[data-status]'); if(s){ s.style.opacity='0'; setTimeout(()=>{ s.textContent='읽음 '+timeStr(); s.style.opacity='1'; }, 280); } }
+
+function appendBubble(m){
+  const wrap = document.createElement('div');
+  wrap.className = 'bubble-wrap ' + m.sender;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + m.sender;
+  bubble.textContent = m.text;
+  wrap.appendChild(bubble);
+  thread.appendChild(wrap);
+  requestAnimationFrame(() => requestAnimationFrame(() => { wrap.classList.add('visible'); scrollDown(); }));
+}
+
+function showTyping(cb){
+  const wrap = document.createElement('div');
+  wrap.className = 'typing-wrap';
+  wrap.innerHTML = '<div class="typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  thread.appendChild(wrap); scrollDown();
+  setTimeout(() => { wrap.remove(); cb(); }, 1100);
+}
+
+function send(){
+  if(busy || idx >= messages.length) return;
+  const m = messages[idx];
+  if(m.sender !== 'me') return;
+  busy = true; setReady(false);
+
+  clearStatuses();
+  appendBubble(m);
+  setStatus('전달됨');
+  idx++;
+
+  if(idx < messages.length && messages[idx].sender === 'them'){
+    const reply = messages[idx];
+    setTimeout(() => {
+      markRead();
+      setTimeout(() => {
+        showTyping(() => { appendBubble(reply); idx++; busy = false; afterStep(); });
+      }, 650);
+    }, 850);
+  } else { busy = false; afterStep(); }
+}
+
+function afterStep(){
+  if(idx >= messages.length){ setReady(false); replayBtn.classList.add('visible'); }
+  else { setReady(true); }
+}
+
+function start(){
+  thread.innerHTML = '';
+  const ts = document.createElement('div');
+  ts.className = 'timestamp';
+  ts.innerHTML = '<b>' + timeStr() + '</b>';
+  thread.appendChild(ts);
+  idx = 0; busy = false;
+  replayBtn.classList.remove('visible');
+  setReady(true);
+  resetIdle();
+}
+
+// 키오스크: 일정 시간 입력 없으면 다음 관객을 위해 처음으로 리셋
+let idleTimer = null;
+function resetIdle(){ clearTimeout(idleTimer); idleTimer = setTimeout(start, 45000); }
+document.addEventListener('pointerdown', resetIdle, true);
+
+sendBtn.addEventListener('click', send);
+inputField.addEventListener('click', send);
+replayBtn.addEventListener('click', start);
+start();
+</script>
+</body>
+</html>
